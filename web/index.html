@@ -4,20 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Evolving Geography of Canada (1667–2001)</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #0a0e17;
             color: #e0e0e0;
-        }
-        #map {
-            width: 100%;
-            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Controls overlay */
+        #map-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .graticule {
+            fill: none;
+            stroke: rgba(255,255,255,0.06);
+            stroke-width: 0.5;
+        }
+        .outline {
+            fill: none;
+            stroke: rgba(255,255,255,0.15);
+            stroke-width: 1;
+        }
+
+        .region {
+            stroke: rgba(255,255,255,0.35);
+            stroke-width: 0.5;
+            cursor: pointer;
+            transition: fill-opacity 0.15s;
+        }
+        .region:hover {
+            fill-opacity: 0.85 !important;
+            stroke: rgba(255,255,255,0.7);
+            stroke-width: 1.2;
+        }
+
         #controls {
             position: absolute;
             bottom: 30px;
@@ -106,7 +135,6 @@
         .btn:hover { background: rgba(79,195,247,0.3); }
         .btn.active { background: rgba(79,195,247,0.5); border-color: #4fc3f7; }
 
-        /* Event banner */
         #event-banner {
             position: absolute;
             top: 20px;
@@ -139,7 +167,6 @@
             line-height: 1.4;
         }
 
-        /* Legend */
         #legend {
             position: absolute;
             top: 20px;
@@ -162,6 +189,7 @@
             align-items: center;
             gap: 8px;
             margin-bottom: 4px;
+            transition: opacity 0.3s;
         }
         .legend-swatch {
             width: 16px;
@@ -171,7 +199,6 @@
             flex-shrink: 0;
         }
 
-        /* Title */
         #title {
             position: absolute;
             top: 20px;
@@ -193,14 +220,30 @@
             color: rgba(255,255,255,0.5);
         }
 
-        /* Speed control */
         #speed-label {
             font-size: 0.7em;
             color: rgba(255,255,255,0.5);
             white-space: nowrap;
         }
 
-        /* Loading */
+        #tooltip {
+            position: absolute;
+            z-index: 1100;
+            background: rgba(10, 14, 23, 0.95);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.8em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            max-width: 250px;
+        }
+        #tooltip.visible { opacity: 1; }
+        #tooltip strong { color: #fff; }
+        #tooltip em { color: rgba(255,255,255,0.6); }
+        #tooltip .sov { color: #4fc3f7; font-size: 0.9em; }
+
         #loading {
             position: absolute;
             top: 50%;
@@ -213,11 +256,13 @@
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="map-container">
+        <svg id="map"></svg>
+    </div>
 
     <div id="title">
         <h1>The Evolving Geography of Canada</h1>
-        <p>Historical Atlas of Canada &middot; 1667&ndash;2001</p>
+        <p>Historical Atlas of Canada &middot; 1667&ndash;2001 &middot; Lambert Conformal Conic</p>
     </div>
 
     <div id="event-banner">
@@ -226,6 +271,7 @@
     </div>
 
     <div id="legend"></div>
+    <div id="tooltip"></div>
 
     <div id="controls">
         <div id="year-display">1667</div>
@@ -244,7 +290,7 @@
 
     <div id="loading">Loading boundary data...</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
     <script>
         // --- Sovereign color palette ---
@@ -263,51 +309,56 @@
         };
         const DEFAULT_COLOR = '#455a64';
 
-        function getSovereignColor(sovereign) {
-            return SOVEREIGN_COLORS[sovereign] || DEFAULT_COLOR;
+        function getSovereignColor(sov) {
+            return SOVEREIGN_COLORS[sov] || DEFAULT_COLOR;
         }
 
-        function regionStyle(feature) {
-            const sov = feature.properties.sovereign;
-            return {
-                fillColor: getSovereignColor(sov),
-                weight: 1,
-                opacity: 0.8,
-                color: 'rgba(255,255,255,0.4)',
-                fillOpacity: 0.55,
-            };
-        }
+        // --- Projection: Lambert Conformal Conic for Canada ---
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
-        // --- Map setup ---
-        const map = L.map('map', {
-            center: [62, -96],
-            zoom: 4,
-            zoomControl: false,
-            attributionControl: false,
-        });
+        const projection = d3.geoConicConformal()
+            .parallels([49, 77])
+            .rotate([95, 0])
+            .center([0, 62])
+            .scale(width * 0.85)
+            .translate([width / 2, height / 2]);
 
-        // Dark basemap
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-            maxZoom: 10,
-        }).addTo(map);
+        const path = d3.geoPath().projection(projection);
 
-        // Labels on top
-        const labelsPane = map.createPane('labels');
-        labelsPane.style.zIndex = 650;
-        labelsPane.style.pointerEvents = 'none';
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-            maxZoom: 10,
-            pane: 'labels',
-        }).addTo(map);
+        const svg = d3.select('#map')
+            .attr('width', width)
+            .attr('height', height);
 
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        L.control.attribution({ position: 'bottomleft' })
-            .addAttribution('Data: <a href="https://historicalatlas.ca/" target="_blank">Historical Atlas of Canada</a>')
-            .addTo(map);
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 8])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+        svg.call(zoom);
+
+        const g = svg.append('g');
+
+        // Graticule
+        const graticule = d3.geoGraticule().step([10, 10]);
+        g.append('path')
+            .datum(graticule())
+            .attr('class', 'graticule')
+            .attr('d', path);
+
+        // Sphere outline
+        g.append('path')
+            .datum({ type: 'Sphere' })
+            .attr('class', 'outline')
+            .attr('d', path);
+
+        // Region group
+        const regionGroup = g.append('g').attr('class', 'regions');
 
         // --- State ---
-        let allFeatures = {};   // year -> GeoJSON features
-        let changeEvents = {};  // year -> [{event, description}]
+        let allFeatures = {};
+        let changeEvents = {};
         let years = [];
         let currentIdx = 0;
         let playing = false;
@@ -316,19 +367,16 @@
         const speeds = [0.5, 1, 2, 4];
         let speedIdx = 1;
 
-        let boundaryLayer = null;
+        const tooltip = document.getElementById('tooltip');
 
         // --- Load data ---
         async function loadData() {
-            // Load TopoJSON
             const resp = await fetch('data/all_boundaries.topojson');
             const topo = await resp.json();
 
-            // Get the object key
             const objKey = Object.keys(topo.objects)[0];
             const geojson = topojson.feature(topo, topo.objects[objKey]);
 
-            // Group features by year
             geojson.features.forEach(f => {
                 const y = f.properties.year;
                 if (!allFeatures[y]) allFeatures[y] = [];
@@ -337,7 +385,6 @@
 
             years = Object.keys(allFeatures).map(Number).sort((a, b) => a - b);
 
-            // Load changes
             try {
                 const cr = await fetch('data/changes.topojson');
                 const cTopo = await cr.json();
@@ -351,18 +398,15 @@
                         description: f.properties.description
                     });
                 });
-            } catch(e) {
+            } catch (e) {
                 console.warn('Changes data not available:', e);
             }
 
-            // Setup timeline
             const slider = document.getElementById('timeline');
             slider.max = years.length - 1;
 
-            // Tick labels
             const tickContainer = document.getElementById('tick-labels');
             const labelYears = [1667, 1763, 1867, 1905, 1999];
-            // Create sparse ticks
             tickContainer.innerHTML = '';
             for (const y of labelYears) {
                 const span = document.createElement('span');
@@ -382,29 +426,40 @@
             document.getElementById('year-display').textContent = year;
             document.getElementById('timeline').value = idx;
 
-            // Update map
-            if (boundaryLayer) map.removeLayer(boundaryLayer);
+            const features = allFeatures[year] || [];
 
-            const fc = { type: 'FeatureCollection', features: allFeatures[year] || [] };
-            boundaryLayer = L.geoJSON(fc, {
-                style: regionStyle,
-                onEachFeature: (feature, layer) => {
-                    const p = feature.properties;
-                    let tip = `<strong>${p.name || 'Unknown'}</strong>`;
-                    if (p.name_fr) tip += `<br><em>${p.name_fr}</em>`;
-                    if (p.sovereign) tip += `<br>Sovereign: ${p.sovereign}`;
-                    layer.bindTooltip(tip, { sticky: true });
-                }
-            }).addTo(map);
+            const regions = regionGroup.selectAll('.region')
+                .data(features, (d, i) => d.properties.name + '_' + i);
 
-            // Show event banner
+            regions.exit().remove();
+
+            const entered = regions.enter()
+                .append('path')
+                .attr('class', 'region');
+
+            entered.merge(regions)
+                .attr('d', path)
+                .attr('fill', d => getSovereignColor(d.properties.sovereign))
+                .attr('fill-opacity', 0.6)
+                .on('mousemove', function (event, d) {
+                    const p = d.properties;
+                    let html = `<strong>${p.name || 'Unknown'}</strong>`;
+                    if (p.name_fr) html += `<br><em>${p.name_fr}</em>`;
+                    if (p.sovereign) html += `<br><span class="sov">${p.sovereign}</span>`;
+                    tooltip.innerHTML = html;
+                    tooltip.style.left = (event.pageX + 12) + 'px';
+                    tooltip.style.top = (event.pageY - 10) + 'px';
+                    tooltip.classList.add('visible');
+                })
+                .on('mouseleave', function () {
+                    tooltip.classList.remove('visible');
+                });
+
             const banner = document.getElementById('event-banner');
             if (changeEvents[year]) {
                 const events = changeEvents[year];
-                // Deduplicate event names
                 const uniqueEvents = [...new Set(events.map(e => e.event))];
                 document.getElementById('event-title').textContent = `${year}: ${uniqueEvents.join(' / ')}`;
-                // Show first description
                 const desc = events.find(e => e.description)?.description || '';
                 document.getElementById('event-desc').textContent = desc.length > 300 ? desc.slice(0, 297) + '...' : desc;
                 banner.classList.add('visible');
@@ -412,7 +467,6 @@
                 banner.classList.remove('visible');
             }
 
-            // Update legend visibility based on active sovereigns
             updateLegend(year);
         }
 
@@ -448,9 +502,7 @@
             document.getElementById('btn-play').classList.toggle('active', playing);
             if (playing) {
                 playInterval = setInterval(() => {
-                    if (currentIdx >= years.length - 1) {
-                        currentIdx = -1; // will wrap to 0
-                    }
+                    if (currentIdx >= years.length - 1) currentIdx = -1;
                     showYear(currentIdx + 1);
                 }, 2000 / speed);
             } else {
@@ -479,7 +531,6 @@
             }
         });
 
-        // Keyboard controls
         document.addEventListener('keydown', e => {
             if (e.key === 'ArrowLeft' && currentIdx > 0) showYear(currentIdx - 1);
             if (e.key === 'ArrowRight' && currentIdx < years.length - 1) showYear(currentIdx + 1);
@@ -489,7 +540,14 @@
             }
         });
 
-        // --- Init ---
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            svg.attr('width', w).attr('height', h);
+            projection.scale(w * 0.85).translate([w / 2, h / 2]);
+            g.selectAll('path').attr('d', path);
+        });
+
         loadData();
     </script>
 </body>
