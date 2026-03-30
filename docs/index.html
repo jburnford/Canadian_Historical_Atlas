@@ -370,7 +370,11 @@
 
         // --- Load data ---
         async function loadData() {
+            try {
+            document.getElementById('loading').textContent = 'Fetching boundary data...';
             const resp = await fetch('data/all_boundaries.geojson');
+            if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+            document.getElementById('loading').textContent = 'Parsing data...';
             const geojson = await resp.json();
 
             geojson.features.forEach(f => {
@@ -411,6 +415,10 @@
             document.getElementById('loading').style.display = 'none';
             showYear(0);
             buildLegend();
+            } catch(err) {
+                document.getElementById('loading').textContent = 'Error: ' + err.message;
+                console.error(err);
+            }
         }
 
         function showYear(idx) {
