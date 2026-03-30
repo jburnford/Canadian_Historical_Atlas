@@ -291,7 +291,6 @@
     <div id="loading">Loading boundary data...</div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
     <script>
         // --- Sovereign color palette ---
         const SOVEREIGN_COLORS = {
@@ -371,11 +370,8 @@
 
         // --- Load data ---
         async function loadData() {
-            const resp = await fetch('data/all_boundaries.topojson');
-            const topo = await resp.json();
-
-            const objKey = Object.keys(topo.objects)[0];
-            const geojson = topojson.feature(topo, topo.objects[objKey]);
+            const resp = await fetch('data/all_boundaries.geojson');
+            const geojson = await resp.json();
 
             geojson.features.forEach(f => {
                 const y = f.properties.year;
@@ -386,10 +382,8 @@
             years = Object.keys(allFeatures).map(Number).sort((a, b) => a - b);
 
             try {
-                const cr = await fetch('data/changes.topojson');
-                const cTopo = await cr.json();
-                const cKey = Object.keys(cTopo.objects)[0];
-                const cGeo = topojson.feature(cTopo, cTopo.objects[cKey]);
+                const cr = await fetch('data/changes.geojson');
+                const cGeo = await cr.json();
                 cGeo.features.forEach(f => {
                     const y = f.properties.year;
                     if (!changeEvents[y]) changeEvents[y] = [];
