@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Evolving Geography of Canada (1667–2001)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e17;
+            color: #e0e0e0;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Controls overlay */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 600px;
+            max-width: 90vw;
+        }
+
+        #year-display {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #fff;
+            min-width: 90px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #timeline-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        #timeline {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+            cursor: pointer;
+        }
+        #timeline::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            border: 2px solid #fff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(79,195,247,0.5);
+        }
+        #timeline::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            border: 2px solid #fff;
+            cursor: pointer;
+        }
+
+        #tick-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65em;
+            color: rgba(255,255,255,0.4);
+            padding: 0 2px;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: rgba(79,195,247,0.3); }
+        .btn.active { background: rgba(79,195,247,0.5); border-color: #4fc3f7; }
+
+        /* Event banner */
+        #event-banner {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(79,195,247,0.3);
+            border-radius: 10px;
+            padding: 12px 20px;
+            max-width: 600px;
+            text-align: center;
+            transition: opacity 0.4s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #event-banner.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #event-banner h3 {
+            color: #4fc3f7;
+            font-size: 0.95em;
+            margin-bottom: 4px;
+        }
+        #event-banner p {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.4;
+        }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 0.8em;
+        }
+        #legend h4 {
+            margin-bottom: 8px;
+            color: #fff;
+            font-size: 0.9em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .legend-swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.2);
+            flex-shrink: 0;
+        }
+
+        /* Title */
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 14px 18px;
+        }
+        #title h1 {
+            font-size: 1.1em;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        #title p {
+            font-size: 0.7em;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* Speed control */
+        #speed-label {
+            font-size: 0.7em;
+            color: rgba(255,255,255,0.5);
+            white-space: nowrap;
+        }
+
+        /* Loading */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            color: #4fc3f7;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="title">
+        <h1>The Evolving Geography of Canada</h1>
+        <p>Historical Atlas of Canada &middot; 1667&ndash;2001</p>
+    </div>
+
+    <div id="event-banner">
+        <h3 id="event-title"></h3>
+        <p id="event-desc"></p>
+    </div>
+
+    <div id="legend"></div>
+
+    <div id="controls">
+        <div id="year-display">1667</div>
+        <button class="btn" id="btn-prev" title="Previous">&#9664;</button>
+        <button class="btn" id="btn-play" title="Play/Pause">&#9654;</button>
+        <button class="btn" id="btn-next" title="Next">&#9654;</button>
+        <div id="timeline-container">
+            <input type="range" id="timeline" min="0" max="45" value="0" step="1">
+            <div id="tick-labels"></div>
+        </div>
+        <div>
+            <button class="btn" id="btn-speed" title="Speed">1x</button>
+            <div id="speed-label">speed</div>
+        </div>
+    </div>
+
+    <div id="loading">Loading boundary data...</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+    <script>
+        // --- Sovereign color palette ---
+        const SOVEREIGN_COLORS = {
+            'France':               '#2962ff',
+            'Britain':              '#c62828',
+            'Canada':               '#d32f2f',
+            'Hudsons Bay Company':  '#6a1b9a',
+            'Spain':                '#ef6c00',
+            'Russia':               '#1b5e20',
+            'USA':                  '#1565c0',
+            'Denmark':              '#00838f',
+            'Mexico':               '#f9a825',
+            'Indigenous':           '#4e342e',
+            'Disputed':             '#757575',
+        };
+        const DEFAULT_COLOR = '#455a64';
+
+        function getSovereignColor(sovereign) {
+            return SOVEREIGN_COLORS[sovereign] || DEFAULT_COLOR;
+        }
+
+        function regionStyle(feature) {
+            const sov = feature.properties.sovereign;
+            return {
+                fillColor: getSovereignColor(sov),
+                weight: 1,
+                opacity: 0.8,
+                color: 'rgba(255,255,255,0.4)',
+                fillOpacity: 0.55,
+            };
+        }
+
+        // --- Map setup ---
+        const map = L.map('map', {
+            center: [62, -96],
+            zoom: 4,
+            zoomControl: false,
+            attributionControl: false,
+        });
+
+        // Dark basemap
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            maxZoom: 10,
+        }).addTo(map);
+
+        // Labels on top
+        const labelsPane = map.createPane('labels');
+        labelsPane.style.zIndex = 650;
+        labelsPane.style.pointerEvents = 'none';
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+            maxZoom: 10,
+            pane: 'labels',
+        }).addTo(map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        L.control.attribution({ position: 'bottomleft' })
+            .addAttribution('Data: <a href="https://historicalatlas.ca/" target="_blank">Historical Atlas of Canada</a>')
+            .addTo(map);
+
+        // --- State ---
+        let allFeatures = {};   // year -> GeoJSON features
+        let changeEvents = {};  // year -> [{event, description}]
+        let years = [];
+        let currentIdx = 0;
+        let playing = false;
+        let playInterval = null;
+        let speed = 1;
+        const speeds = [0.5, 1, 2, 4];
+        let speedIdx = 1;
+
+        let boundaryLayer = null;
+
+        // --- Load data ---
+        async function loadData() {
+            // Load TopoJSON
+            const resp = await fetch('data/all_boundaries.topojson');
+            const topo = await resp.json();
+
+            // Get the object key
+            const objKey = Object.keys(topo.objects)[0];
+            const geojson = topojson.feature(topo, topo.objects[objKey]);
+
+            // Group features by year
+            geojson.features.forEach(f => {
+                const y = f.properties.year;
+                if (!allFeatures[y]) allFeatures[y] = [];
+                allFeatures[y].push(f);
+            });
+
+            years = Object.keys(allFeatures).map(Number).sort((a, b) => a - b);
+
+            // Load changes
+            try {
+                const cr = await fetch('data/changes.topojson');
+                const cTopo = await cr.json();
+                const cKey = Object.keys(cTopo.objects)[0];
+                const cGeo = topojson.feature(cTopo, cTopo.objects[cKey]);
+                cGeo.features.forEach(f => {
+                    const y = f.properties.year;
+                    if (!changeEvents[y]) changeEvents[y] = [];
+                    changeEvents[y].push({
+                        event: f.properties.event,
+                        description: f.properties.description
+                    });
+                });
+            } catch(e) {
+                console.warn('Changes data not available:', e);
+            }
+
+            // Setup timeline
+            const slider = document.getElementById('timeline');
+            slider.max = years.length - 1;
+
+            // Tick labels
+            const tickContainer = document.getElementById('tick-labels');
+            const labelYears = [1667, 1763, 1867, 1905, 1999];
+            // Create sparse ticks
+            tickContainer.innerHTML = '';
+            for (const y of labelYears) {
+                const span = document.createElement('span');
+                span.textContent = y;
+                tickContainer.appendChild(span);
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            showYear(0);
+            buildLegend();
+        }
+
+        function showYear(idx) {
+            currentIdx = idx;
+            const year = years[idx];
+
+            document.getElementById('year-display').textContent = year;
+            document.getElementById('timeline').value = idx;
+
+            // Update map
+            if (boundaryLayer) map.removeLayer(boundaryLayer);
+
+            const fc = { type: 'FeatureCollection', features: allFeatures[year] || [] };
+            boundaryLayer = L.geoJSON(fc, {
+                style: regionStyle,
+                onEachFeature: (feature, layer) => {
+                    const p = feature.properties;
+                    let tip = `<strong>${p.name || 'Unknown'}</strong>`;
+                    if (p.name_fr) tip += `<br><em>${p.name_fr}</em>`;
+                    if (p.sovereign) tip += `<br>Sovereign: ${p.sovereign}`;
+                    layer.bindTooltip(tip, { sticky: true });
+                }
+            }).addTo(map);
+
+            // Show event banner
+            const banner = document.getElementById('event-banner');
+            if (changeEvents[year]) {
+                const events = changeEvents[year];
+                // Deduplicate event names
+                const uniqueEvents = [...new Set(events.map(e => e.event))];
+                document.getElementById('event-title').textContent = `${year}: ${uniqueEvents.join(' / ')}`;
+                // Show first description
+                const desc = events.find(e => e.description)?.description || '';
+                document.getElementById('event-desc').textContent = desc.length > 300 ? desc.slice(0, 297) + '...' : desc;
+                banner.classList.add('visible');
+            } else {
+                banner.classList.remove('visible');
+            }
+
+            // Update legend visibility based on active sovereigns
+            updateLegend(year);
+        }
+
+        function buildLegend() {
+            const container = document.getElementById('legend');
+            let html = '<h4>Sovereign Powers</h4>';
+            for (const [name, color] of Object.entries(SOVEREIGN_COLORS)) {
+                html += `<div class="legend-item" data-sovereign="${name}">
+                    <div class="legend-swatch" style="background:${color}"></div>
+                    <span>${name === 'Hudsons Bay Company' ? "Hudson's Bay Co." : name}</span>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function updateLegend(year) {
+            const features = allFeatures[year] || [];
+            const activeSovereigns = new Set(features.map(f => f.properties.sovereign).filter(Boolean));
+            document.querySelectorAll('.legend-item').forEach(el => {
+                const sov = el.dataset.sovereign;
+                el.style.opacity = activeSovereigns.has(sov) ? '1' : '0.25';
+            });
+        }
+
+        // --- Controls ---
+        document.getElementById('timeline').addEventListener('input', e => {
+            showYear(parseInt(e.target.value));
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            playing = !playing;
+            document.getElementById('btn-play').innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
+            document.getElementById('btn-play').classList.toggle('active', playing);
+            if (playing) {
+                playInterval = setInterval(() => {
+                    if (currentIdx >= years.length - 1) {
+                        currentIdx = -1; // will wrap to 0
+                    }
+                    showYear(currentIdx + 1);
+                }, 2000 / speed);
+            } else {
+                clearInterval(playInterval);
+            }
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentIdx > 0) showYear(currentIdx - 1);
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentIdx < years.length - 1) showYear(currentIdx + 1);
+        });
+
+        document.getElementById('btn-speed').addEventListener('click', () => {
+            speedIdx = (speedIdx + 1) % speeds.length;
+            speed = speeds[speedIdx];
+            document.getElementById('btn-speed').textContent = speed + 'x';
+            if (playing) {
+                clearInterval(playInterval);
+                playInterval = setInterval(() => {
+                    if (currentIdx >= years.length - 1) currentIdx = -1;
+                    showYear(currentIdx + 1);
+                }, 2000 / speed);
+            }
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' && currentIdx > 0) showYear(currentIdx - 1);
+            if (e.key === 'ArrowRight' && currentIdx < years.length - 1) showYear(currentIdx + 1);
+            if (e.key === ' ') {
+                e.preventDefault();
+                document.getElementById('btn-play').click();
+            }
+        });
+
+        // --- Init ---
+        loadData();
+    </script>
+</body>
+</html>
