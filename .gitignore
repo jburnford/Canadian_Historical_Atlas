@@ -1,0 +1,3 @@
+shapefiles_new/
+canada_boundaries_temporal.gpkg
+web/data/*.geojson
