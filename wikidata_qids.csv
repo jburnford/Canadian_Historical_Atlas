@@ -1,0 +1,105 @@
+name,csv_name,type,qid,wikidata_label,role,notes
+# ===== Sovereign Powers (E74 Group) =====
+Kingdom of France,France,sovereign,Q70972,Kingdom of France (987-1792),E74 Group,
+Kingdom of Great Britain,Britain,sovereign,Q161885,Kingdom of Great Britain (1707-1800),E74 Group,pre-1801
+United Kingdom,Britain,sovereign,Q145,United Kingdom,E74 Group,post-1801
+British Empire,Britain,sovereign,Q8680,British Empire (1607-1997),E74 Group,broader concept
+Canada,Canada,sovereign,Q16,Canada,E53 Place + E74 Group,post-1867; also a place
+United States,USA,sovereign,Q30,United States of America,E53 Place + E74 Group,also a place
+Spanish Empire,Spain,sovereign,Q80702,Spanish Empire (1492-1976),E74 Group,
+Russian Empire,Russia,sovereign,Q34266,Russian Empire (1721-1917),E74 Group,
+Kingdom of Denmark,Denmark,sovereign,Q756617,Kingdom of Denmark,E74 Group,includes Greenland
+Mexico,Mexico,sovereign,Q96,Mexico,E74 Group,
+Hudson's Bay Company,Hudsons Bay Company,sovereign,Q76039,Hudson's Bay Company,E74 Group,commercial sovereign
+# ===== Modern Provinces/Territories (E53 Place) =====
+Alberta,Alberta,province,Q1951,Alberta — province of Canada,E53 Place,
+British Columbia,British Columbia,province,Q1973,British Columbia — province of Canada,E53 Place,
+Manitoba,Manitoba,province,Q1948,Manitoba — province of Canada,E53 Place,
+New Brunswick,New Brunswick,province,Q1965,New Brunswick — province of Canada,E53 Place,
+Newfoundland and Labrador,Newfoundland and Labrador,province,Q2003,Newfoundland and Labrador — province of Canada,E53 Place,
+Nova Scotia,Nova Scotia,province,Q1952,Nova Scotia — province of Canada,E53 Place,
+Ontario,Ontario,province,Q1904,Ontario — province of Canada,E53 Place,
+Prince Edward Island,PEI,province,Q1979,Prince Edward Island — province of Canada,E53 Place,
+Isle Saint-Jean,Saint John's Island/Saint John Island,historical,Q3155400,Isle Saint-Jean,E93 Presence,pre-PEI name
+Quebec,Quebec,province,Q176,Quebec — province of Canada,E53 Place,
+Saskatchewan,Saskatchewan,province,Q1989,Saskatchewan — province of Canada,E53 Place,
+Northwest Territories,Northwest Territories,territory,Q2007,Northwest Territories — territory of Canada,E53 Place,
+Nunavut,Nunavut,territory,Q2023,Nunavut — territory of Canada,E53 Place,
+Yukon,Yukon Territory,territory,Q2009,Yukon — territory of Canada,E53 Place,
+# ===== Historical Territories (E93 Presence) =====
+British Colonies,British Colonies,historical,LOCAL:british-colonies,British Colonies (generic GIS label),E93 Presence,minted URI; pre-1783 catch-all
+North-Western Territory,Northwestern Territory,historical,Q1998931,North-Western Territory (1670-1870),E93 Presence,HBC territory
+New France,New France,historical,Q170604,New France — area colonized by France,E93 Presence,1534-1763
+Rupert's Land,Rupert's Land,historical,Q738395,Rupert's Land — territory in British North America,E93 Presence,1670-1870
+Louisiana (New France),Louisiana,historical,Q658054,Louisiana (New France),E93 Presence,French period
+Louisiana (Spanish),Louisiana,historical,Q748300,Louisiana (Spain),E93 Presence,Spanish period 1763-1800
+Province of Canada,Canada East/Canada West,historical,Q1121436,Province of Canada (1841-1867),E93 Presence,
+Lower Canada,Lower Canada,historical,Q1134180,Lower Canada,E93 Presence,1791-1840
+Upper Canada,Upper Canada,historical,Q795427,Upper Canada,E93 Presence,1791-1840
+Thirteen Colonies,13 Colonies,historical,Q179997,Thirteen Colonies,E93 Presence,1732-1776
+Russian America,Alaska,historical,Q910495,Russian America,E93 Presence,to 1867
+Colony of Vancouver Island,Vancouver's Island,historical,Q2510000,Colony of Vancouver Island (1849-1866),E93 Presence,
+Colony of British Columbia (1858),British Columbia,historical,Q918861,Colony of British Columbia (1858-1866),E93 Presence,mainland
+Colony of British Columbia (1866),British Columbia,historical,Q2514958,Colony of British Columbia (1866-1871),E93 Presence,united
+New Caledonia,New Caledonia,historical,Q2201031,New Caledonia (British Columbia),E93 Presence,
+New Brunswick colony,New Brunswick,historical,Q107499350,New Brunswick — British colony (1784-1867),E93 Presence,
+Nova Scotia colony,Nova Scotia,historical,Q98931415,Nova Scotia — British former colony,E93 Presence,
+Oregon Country,Oregon Territory,historical,Q388164,Oregon Country,E93 Presence,disputed 1818-1846
+Dominion of Newfoundland,Newfoundland,historical,Q38610,Dominion of Newfoundland (1907-1949),E93 Presence,
+Greenland,Greenland,place,Q223,Greenland,E53 Place,
+Iceland,Iceland,place,Q189,Iceland,E53 Place,
+Cape Breton Island,Cape Breton,place,Q188489,Cape Breton Island,E53 Place,
+Indian Territory,Indian Territory,historical,Q868245,Indian Territory,E93 Presence,
+# ===== Historical Districts (E93 Presence) =====
+District of Keewatin,District of Keewatin,district,Q603676,District of Keewatin,E93 Presence,1876-1905
+District of Franklin,District of Franklin,district,Q676758,Franklin District,E93 Presence,1895-1999
+District of Mackenzie,District of Mackenzie,district,Q3031442,Mackenzie District,E93 Presence,1895-1999
+District of Ungava,District of Ungava,district,Q2574114,Ungava District,E93 Presence,1895-1912
+District of Assiniboia,District of Assiniboia,district,Q18100035,Assiniboia District,E93 Presence,1882-1905
+District of Alberta,District of Alberta,district,Q5283390,Alberta District,E93 Presence,1882-1905
+District of Saskatchewan,District of Saskatchewan,district,Q5283474,Saskatchewan District,E93 Presence,1882-1905
+District of Athabaska,District of Athabaska,district,Q5283393,Athabasca District,E93 Presence,1882-1905
+# ===== Landmass (E53 Place) =====
+North America,,,Q49,North America,E53 Place,top-level container
+# ===== Treaties / Acts / Events (E5 Event) =====
+Treaty of Utrecht,1713,event,Q154674,Peace of Utrecht,E5 Event,
+Treaty of Paris (1763),1763,event,Q156211,Treaty of Paris (1763),E5 Event,user-provided
+Royal Proclamation of 1763,1763,event,Q209573,Royal Proclamation of 1763,E5 Event,
+Quebec Act of 1774,1774,event,Q764479,Quebec Act of 1774,E5 Event,
+Treaty of Paris (1783),1783,event,Q217450,Treaty of Paris (1783),E5 Event,user-provided
+Nootka Convention,1790,event,Q1648086,Nootka Convention,E5 Event,
+Constitutional Act of 1791,1791,event,Q2090855,Constitutional Act of 1791,E5 Event,
+Louisiana Purchase,1803,event,Q193155,Louisiana Purchase,E5 Event,
+Newfoundland Act 1809,1809,event,Q105830335,Newfoundland Act 1809,E5 Event,user-provided
+Convention of 1818,1818,event,Q649599,Treaty of 1818,E5 Event,49th parallel
+Adams-Onis Treaty,1819,event,Q351722,Adams-Onis Treaty,E5 Event,
+Treaty of Saint Petersburg,1825,event,Q4065194,Treaty of Saint Petersburg (1825),E5 Event,Anglo-Russian boundary
+Act of Union 1840,1840,event,Q2823561,Act of Union 1840,E5 Event,user-provided
+Webster-Ashburton Treaty,1842,event,Q1191091,Webster-Ashburton Treaty,E5 Event,
+Oregon Treaty,1846,event,Q823433,Oregon Treaty,E5 Event,
+Constitution Act 1867,1867,event,Q868884,Constitution Act 1867 (BNA Act),E5 Event,
+Rupert's Land Act 1868,1868,event,Q7380243,Rupert's Land Act 1868,E5 Event,
+Manitoba Act 1870,1870,event,Q1890465,Manitoba Act 1870,E5 Event,
+Alaska Purchase,1867,event,Q309029,Alaska Purchase,E5 Event,
+Alberta Act,1905,event,Q4711569,Alberta Act,E5 Event,user-provided
+Saskatchewan Act,1905,event,Q7425176,Saskatchewan Act,E5 Event,
+Alaska boundary dispute,1903,event,Q576036,Alaska boundary dispute,E5 Event,
+Newfoundland Act 1949,1949,event,Q9143629,Newfoundland Act 1949,E5 Event,
+Nunavut Act,1993,event,Q11220755,Nunavut Act,E5 Event,
+Stikine Territory,Stickeen Territory,historical,Q1250208,Stickeen Territories,E93 Presence,1862
+# ===== MINTED LOCAL URIs =====
+Arctic Islands,Arctic Islands,historical,LOCAL:arctic-islands,Arctic Islands (British claim),E93 Presence,1859-1876
+Northern Islands,Northern Islands,historical,LOCAL:northern-islands,Northern Islands (British),E93 Presence,1825-1858
+Claimed by Britain and France,Disputed,historical,LOCAL:disputed-britain-france,Claimed by Britain and France,E93 Presence,1667
+Claimed by France and Britain,Disputed,historical,LOCAL:disputed-france-britain,Claimed by France and Britain,E93 Presence,1713
+Claimed by Britain and Russia,Disputed,historical,LOCAL:disputed-britain-russia,Claimed by Britain and Russia,E93 Presence,1800-1821
+Claimed by Britain and USA,Disputed,historical,LOCAL:disputed-britain-usa,Claimed by Britain and USA,E93 Presence,1800-1809
+Claimed by US and Britain,Disputed,historical,LOCAL:disputed-us-britain,Claimed by US and Britain,E93 Presence,1798-1840
+Disputed area,Disputed area,historical,LOCAL:disputed-canada,Disputed area (Canada),E93 Presence,1881-1886
+# ===== EVENTS — STILL NEED QIDs =====
+# Various Orders in Council (1870 BC, 1873 PEI, 1880 Arctic) — search as needed
+# Ontario Boundary Act 1889 — search as needed
+# Quebec/Manitoba Boundary Extension Acts (1898, 1912) — search as needed
+# MINTED EVENT URIs:
+# LOCAL:jcpc-labrador-1927 — Labrador boundary decision (JCPC) — no Wikidata entry
+# LOCAL:arctic-sector-claim-1925 — Arctic sector claim — no Wikidata entry
