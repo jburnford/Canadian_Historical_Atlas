@@ -377,6 +377,8 @@
 <h2>Overview</h2>
 <p>This project transforms a set of historical GIS shapefiles&mdash;originally published as part of the <em>Historical Atlas of Canada Online Learning Project</em>&mdash;into Linked Open Data using the <a href="https://www.cidoc-crm.org/">CIDOC-CRM</a> ontology. The result is a knowledge graph that models 334 years of European and settler territorial assertions over Indigenous lands in what is now Canada.</p>
 
+<p>The knowledge graph is a computational model of the <strong>colonial process</strong>, not a representation of Indigenous relationships to land. Maps and spatial models were historically instruments of dispossession; we use those same tools here to make the history of territorial assertions queryable as structured data. See the <strong>Data Model</strong> tab for a full discussion of the limits of this representation.</p>
+
 <div class="stats-grid" id="stats-grid"></div>
 
 <h2>Pipeline</h2>
@@ -462,8 +464,27 @@ E5_Event [treaty or act]
 
 <h2>Key Modeling Decisions</h2>
 
+<h2>Representation, Approximation, and Limits</h2>
+
+<blockquote>
+<p>All humanities scholarship is representation, not inherent truth. This knowledge graph is a computational model of <strong>colonial assertions</strong>, not a model of Indigenous relationships to land.</p>
+</blockquote>
+
+<p>Europeans and settlers arrived and began drawing maps&mdash;maps that had a profound and sometimes genocidal effect on the Indigenous peoples whose lands they claimed. This project attempts to make that colonial process computationally queryable: to ask questions like "how many Indigenous territories did the Hudson's Bay Company charter claim over?" or "which peoples' lands were affected by the Treaty of Paris?"</p>
+
+<p>To do this, we use the same representational tools&mdash;polygons, ontologies, identifiers&mdash;that were historically instruments of dispossession. This creates a tension we want to be transparent about:</p>
+
+<ul>
+    <li><strong>E53 Place is a Western spatial concept.</strong> CIDOC-CRM defines E53 Place as "an extent in physical space"&mdash;essentially Cartesian, bounded, and static. Many Indigenous relationships to land are relational rather than bounded, include spiritual and ceremonial dimensions that no spatial ontology captures, and are living and dynamic rather than fixed polygons on a map.</li>
+    <li><strong>Native Land Digital's boundaries are themselves approximations</strong> created for educational purposes. They do not represent the full complexity of Indigenous territorial relationships, and NLD is clear about this.</li>
+    <li><strong>We classify Indigenous territories as E53 Place as a pragmatic approximation</strong> for spatial analysis&mdash;it allows us to compute overlaps with colonial claim polygons. This is our modeling choice, not a statement about how any community understands their relationship to their land.</li>
+    <li><strong>The real relationships are richer</strong> than any RDF triple can express. Overlapping and shared territories, seasonal movements, kinship networks, treaty relationships between nations, and spiritual connections to land are all dimensions that this model does not and cannot capture.</li>
+</ul>
+
+<p>The purpose of this dataset is to make the <em>colonial process</em> legible as structured data&mdash;to support computational historical research into how European powers asserted, transferred, and reorganized jurisdiction over lands that were already home to hundreds of distinct peoples. It is not a model of Indigenous sovereignty, governance, or relationships to land, all of which predate and persist beyond the colonial assertions recorded here.</p>
+
 <h3>Indigenous territories as E53 Place (not E93)</h3>
-<p>Indigenous territories are modeled as <strong>enduring E53 Places</strong>&mdash;they are not contingent on European recognition and many have never been legally ceded. The choice of E53 over E93 reflects that these are persistent spatial realities, not time-bound configurations. Colonial claims come and go; the land and its Indigenous relationships endure.</p>
+<p>Within the limits described above, Indigenous territories are modeled as <strong>enduring E53 Places</strong>&mdash;they are not contingent on European recognition and many have never been legally ceded. The choice of E53 over E93 reflects that these are persistent spatial realities, not time-bound configurations. Colonial claims come and go; the land and its Indigenous relationships endure.</p>
 
 <h3>Colonial configurations as E93 Presence</h3>
 <p>Historical territorial claims (New France, Rupert's Land, Upper Canada, etc.) are <strong>E93 Presences</strong>&mdash;time-bound spatial configurations that came into being through European treaties and legislation, and ended through the same mechanisms. The same physical land accumulates multiple E93 Presences over time.</p>
