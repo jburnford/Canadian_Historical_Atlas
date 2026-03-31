@@ -3,494 +3,833 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Evolving Geography of Canada (1667–2001)</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>From HGIS to LOD: The Evolving Geography of Canada</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-card: rgba(15, 20, 35, 0.95);
+            --bg-card-hover: rgba(25, 32, 55, 0.95);
+            --border: rgba(255,255,255,0.08);
+            --text: #c8ccd4;
+            --text-bright: #e8ecf2;
+            --text-dim: #6b7280;
+            --accent: #60a5fa;
+            --accent-dim: #2563eb;
+            --green: #34d399;
+            --orange: #fb923c;
+            --red: #f87171;
+            --purple: #a78bfa;
+            --sovereign-france: #2962ff;
+            --sovereign-britain: #c62828;
+            --sovereign-canada: #d32f2f;
+            --sovereign-hbc: #6a1b9a;
+            --sovereign-spain: #ef6c00;
+            --sovereign-russia: #1b5e20;
+            --sovereign-usa: #1565c0;
+            --sovereign-denmark: #00838f;
+            --sovereign-mexico: #f9a825;
+            --sovereign-indigenous: #4e342e;
+            --sovereign-disputed: #757575;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: #0a0e17;
-            color: #e0e0e0;
-        }
-        #map {
-            width: 100%;
-            height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
         }
 
-        /* Controls overlay */
-        #controls {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(10, 14, 23, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            min-width: 600px;
-            max-width: 90vw;
-        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
 
-        #year-display {
-            font-size: 2.2em;
+        /* Header */
+        header {
+            padding: 3rem 2rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border);
+        }
+        header h1 {
+            font-size: 2.2rem;
+            color: var(--text-bright);
             font-weight: 700;
-            color: #fff;
-            min-width: 90px;
+            margin-bottom: 0.5rem;
+        }
+        header .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        /* Navigation tabs */
+        nav {
+            display: flex;
+            gap: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg);
+        }
+        nav button {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            padding: 1rem 1.5rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        nav button:hover { color: var(--text); }
+        nav button.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Main content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Prose sections */
+        .prose { max-width: 800px; }
+        .prose h2 {
+            font-size: 1.6rem;
+            color: var(--text-bright);
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .prose h2:first-child { margin-top: 0; }
+        .prose h3 {
+            font-size: 1.2rem;
+            color: var(--text-bright);
+            margin: 2rem 0 0.75rem;
+        }
+        .prose p { margin-bottom: 1rem; }
+        .prose ul, .prose ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+        .prose li { margin-bottom: 0.4rem; }
+        .prose code {
+            background: rgba(96, 165, 250, 0.1);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent);
+        }
+        .prose pre {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .prose pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        .prose blockquote {
+            border-left: 3px solid var(--accent-dim);
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            background: rgba(96, 165, 250, 0.05);
+            border-radius: 0 6px 6px 0;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
             text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
             font-variant-numeric: tabular-nums;
         }
-
-        #timeline-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
         }
 
-        #timeline {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255,255,255,0.15);
-            outline: none;
-            cursor: pointer;
-        }
-        #timeline::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #4fc3f7;
-            border: 2px solid #fff;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(79,195,247,0.5);
-        }
-        #timeline::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #4fc3f7;
-            border: 2px solid #fff;
-            cursor: pointer;
-        }
-
-        #tick-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.65em;
-            color: rgba(255,255,255,0.4);
-            padding: 0 2px;
-        }
-
-        .btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            cursor: pointer;
+        /* Flow diagram */
+        .flow {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.1em;
-            transition: background 0.2s;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
         }
-        .btn:hover { background: rgba(79,195,247,0.3); }
-        .btn.active { background: rgba(79,195,247,0.5); border-color: #4fc3f7; }
-
-        /* Event banner */
-        #event-banner {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(10, 14, 23, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(79,195,247,0.3);
-            border-radius: 10px;
-            padding: 12px 20px;
-            max-width: 600px;
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
             text-align: center;
-            transition: opacity 0.4s;
-            opacity: 0;
+            min-width: 120px;
+        }
+        .flow-step .step-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .flow-step .step-name { color: var(--text-bright); font-weight: 600; }
+        .flow-arrow { color: var(--text-dim); font-size: 1.2rem; }
+
+        /* Data model table */
+        .model-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .model-table th, .model-table td {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .model-table th {
+            background: rgba(96, 165, 250, 0.08);
+            color: var(--text-bright);
+            font-weight: 600;
+        }
+        .model-table td { color: var(--text); }
+        .model-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* Entity type badges */
+        .badge {
+            display: inline-block;
+            padding: 0.15em 0.5em;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .badge-e53 { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+        .badge-e93 { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+        .badge-e74 { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+        .badge-e7 { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+        .badge-e5 { background: rgba(96, 165, 250, 0.15); color: var(--accent); }
+
+        /* Graph visualization */
+        #graph-container {
+            width: 100%;
+            height: 600px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        #graph-container svg { width: 100%; height: 100%; }
+
+        .node-label {
+            font-size: 10px;
+            fill: var(--text);
             pointer-events: none;
         }
-        #event-banner.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        #event-banner h3 {
-            color: #4fc3f7;
-            font-size: 0.95em;
-            margin-bottom: 4px;
-        }
-        #event-banner p {
-            font-size: 0.8em;
-            color: rgba(255,255,255,0.7);
-            line-height: 1.4;
-        }
 
-        /* Legend */
-        #legend {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            pointer-events: none;
             z-index: 1000;
-            background: rgba(10, 14, 23, 0.92);
+            max-width: 350px;
+            display: none;
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 14px 16px;
-            font-size: 0.8em;
         }
-        #legend h4 {
-            margin-bottom: 8px;
-            color: #fff;
-            font-size: 0.9em;
+        .tooltip .tt-name { font-weight: 700; color: var(--text-bright); margin-bottom: 0.25rem; }
+        .tooltip .tt-type { font-size: 0.75rem; color: var(--text-dim); }
+        .tooltip .tt-link { font-size: 0.8rem; margin-top: 0.25rem; }
+
+        /* Entity list (scrollable) */
+        .entity-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1rem 0;
         }
-        .legend-item {
+        .entity-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
         }
-        .legend-swatch {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-            border: 1px solid rgba(255,255,255,0.2);
-            flex-shrink: 0;
+        .entity-item:last-child { border-bottom: none; }
+        .entity-item:hover { background: rgba(255,255,255,0.02); }
+
+        /* Overlap explorer */
+        #overlap-select {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 0.5rem 0;
+        }
+        #overlap-list {
+            columns: 2;
+            column-gap: 1.5rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        #overlap-list .overlap-item {
+            break-inside: avoid;
+            padding: 0.2rem 0;
         }
 
-        /* Title */
-        #title {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: rgba(10, 14, 23, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 14px 18px;
+        /* Attribution box */
+        .attribution-box {
+            background: rgba(96, 165, 250, 0.05);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
         }
-        #title h1 {
-            font-size: 1.1em;
-            color: #fff;
-            margin-bottom: 2px;
-        }
-        #title p {
-            font-size: 0.7em;
-            color: rgba(255,255,255,0.5);
+        .attribution-box h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
         }
 
-        /* Speed control */
-        #speed-label {
-            font-size: 0.7em;
-            color: rgba(255,255,255,0.5);
-            white-space: nowrap;
+        footer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
         }
 
-        /* Loading */
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2000;
-            color: #4fc3f7;
-            font-size: 1.2em;
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.6rem; }
+            nav button { padding: 0.75rem 0.75rem; font-size: 0.85rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            #overlap-list { columns: 1; }
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
 
-    <div id="title">
-        <h1>The Evolving Geography of Canada</h1>
-        <p>Historical Atlas of Canada &middot; 1667&ndash;2001</p>
-    </div>
+<header>
+    <h1>From HGIS to Linked Open Data</h1>
+    <p class="subtitle">Transforming a Historical GIS dataset of Canada's territorial evolution (1667&ndash;2001) into a CIDOC-CRM knowledge graph that centers Indigenous territories as enduring places</p>
+</header>
 
-    <div id="event-banner">
-        <h3 id="event-title"></h3>
-        <p id="event-desc"></p>
-    </div>
+<nav id="tabs">
+    <button class="active" data-tab="process">Process</button>
+    <button data-tab="model">Data Model</button>
+    <button data-tab="graph">Knowledge Graph</button>
+    <button data-tab="overlaps">Territorial Overlaps</button>
+    <button data-tab="entities">Entity Browser</button>
+    <button data-tab="map">Interactive Map</button>
+</nav>
 
-    <div id="legend"></div>
+<div class="tooltip" id="tooltip"></div>
 
-    <div id="controls">
-        <div id="year-display">1667</div>
-        <button class="btn" id="btn-prev" title="Previous">&#9664;</button>
-        <button class="btn" id="btn-play" title="Play/Pause">&#9654;</button>
-        <button class="btn" id="btn-next" title="Next">&#9654;</button>
-        <div id="timeline-container">
-            <input type="range" id="timeline" min="0" max="45" value="0" step="1">
-            <div id="tick-labels"></div>
-        </div>
-        <div>
-            <button class="btn" id="btn-speed" title="Speed">1x</button>
-            <div id="speed-label">speed</div>
-        </div>
-    </div>
+<main>
 
-    <div id="loading">Loading boundary data...</div>
+<!-- ====== TAB: PROCESS ====== -->
+<div class="tab-content active" id="tab-process">
+<div class="prose">
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
-    <script>
-        // --- Sovereign color palette ---
-        const SOVEREIGN_COLORS = {
-            'France':               '#2962ff',
-            'Britain':              '#c62828',
-            'Canada':               '#d32f2f',
-            'Hudsons Bay Company':  '#6a1b9a',
-            'Spain':                '#ef6c00',
-            'Russia':               '#1b5e20',
-            'USA':                  '#1565c0',
-            'Denmark':              '#00838f',
-            'Mexico':               '#f9a825',
-            'Indigenous':           '#4e342e',
-            'Disputed':             '#757575',
-        };
-        const DEFAULT_COLOR = '#455a64';
+<h2>Overview</h2>
+<p>This project transforms a set of historical GIS shapefiles&mdash;originally published as part of the <em>Historical Atlas of Canada Online Learning Project</em>&mdash;into Linked Open Data using the <a href="https://www.cidoc-crm.org/">CIDOC-CRM</a> ontology. The result is a knowledge graph that models 334 years of European and settler territorial assertions over Indigenous lands in what is now Canada.</p>
 
-        function getSovereignColor(sovereign) {
-            return SOVEREIGN_COLORS[sovereign] || DEFAULT_COLOR;
-        }
+<div class="stats-grid" id="stats-grid"></div>
 
-        function regionStyle(feature) {
-            const sov = feature.properties.sovereign;
-            return {
-                fillColor: getSovereignColor(sov),
-                weight: 1,
-                opacity: 0.8,
-                color: 'rgba(255,255,255,0.4)',
-                fillOpacity: 0.55,
-            };
-        }
+<h2>Pipeline</h2>
 
-        // --- Map setup ---
-        const map = L.map('map', {
-            center: [62, -96],
-            zoom: 4,
-            zoomControl: false,
-            attributionControl: false,
+<div class="flow">
+    <div class="flow-step"><div class="step-label">Source</div><div class="step-name">HGIS Shapefiles</div></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step"><div class="step-label">Convert</div><div class="step-name">GeoJSON / TopoJSON</div></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step"><div class="step-label">Disambiguate</div><div class="step-name">Wikidata QIDs</div></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step"><div class="step-label">GIS Intersect</div><div class="step-name">Indigenous Overlaps</div></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step"><div class="step-label">Output</div><div class="step-name">CIDOC-CRM Turtle</div></div>
+</div>
+
+<h3>Step 1: Source Data</h3>
+<p>The source dataset is <a href="https://doi.org/10.5683/SP2/IQ7E0X">"Territorial Evolution, 1670&ndash;2001"</a> (Nicholson, Whebell, Galois &amp; Stavely, 2020), published on Borealis under CC BY-NC 4.0. It contains 151 shapefiles representing the political boundaries of northern North America across 46 time snapshots. The data was originally developed for the <em>Historical Atlas of Canada</em>.</p>
+
+<h3>Step 2: Conversion to Web Formats</h3>
+<p>The Lambert Conformal Conic shapefiles were reprojected to WGS84 (EPSG:4326), converted to GeoJSON, and compressed to TopoJSON. Each polygon carries properties: territory <code>name</code>, <code>name_fr</code>, <code>sovereign</code>, and <code>year</code>. A companion <code>changes.geojson</code> records 60 historical events with descriptions.</p>
+
+<h3>Step 3: Entity Disambiguation</h3>
+<p>We identified 68 unique territory configurations from the GIS data and grounded them to persistent identifiers:</p>
+<ul>
+    <li><strong>Wikidata QIDs</strong> for sovereign powers (11), modern provinces/territories (13), historical territories (20+), and treaties/acts (23)</li>
+    <li><strong>Minted local URIs</strong> for entities without Wikidata entries (e.g., the generic "British Colonies" label, disputed areas, the 1927 Labrador boundary decision)</li>
+</ul>
+
+<h3>Step 4: GIS Intersection with Indigenous Territories</h3>
+<p>Using <a href="https://geopandas.org/">GeoPandas</a>, we computed spatial overlaps between all colonial boundary polygons and 2,057 Indigenous territories from <a href="https://native-land.ca/">Native Land Digital</a>. This identified <strong>3,216 unique overlap connections</strong> between 66 colonial claims and 507 Indigenous territories.</p>
+
+<div class="attribution-box">
+    <h4>Native Land Digital &mdash; Data Sovereignty</h4>
+    <p>Indigenous territory references in this dataset use URIs from <a href="https://native-land.ca/">Native Land Digital</a>, an Indigenous-led educational platform. We reference territories by URI only&mdash;no NLD boundary data is stored or redistributed. All Indigenous territory data remains under Indigenous governance per NLD's <a href="https://api-docs.native-land.ca/data-sovereignty-treaty">Data Sovereignty Treaty</a>. For visualization, use the <a href="https://api-docs.native-land.ca/">NLD API</a> directly.</p>
+</div>
+
+<h3>Step 5: CIDOC-CRM Modeling</h3>
+<p>The final output is an RDF Turtle file using the CIDOC-CRM ontology (v7.3.1) with CRMgeo extensions. The model is event-centric: territorial relationships are mediated through E7 Activities (assertions of jurisdiction), not attached directly to entities. See the <strong>Data Model</strong> tab for full details on the modeling decisions.</p>
+
+<h2>Source Code &amp; Data</h2>
+<ul>
+    <li><a href="https://github.com/jburnford/Canadian_Historical_Atlas">GitHub Repository</a></li>
+    <li>Source dataset: <a href="https://doi.org/10.5683/SP2/IQ7E0X">doi:10.5683/SP2/IQ7E0X</a></li>
+    <li>Ontology: <a href="https://www.cidoc-crm.org/Version/version-7.3">CIDOC-CRM v7.3.1</a> + <a href="https://www.cidoc-crm.org/crmgeo/">CRMgeo</a></li>
+</ul>
+
+</div>
+</div>
+
+<!-- ====== TAB: DATA MODEL ====== -->
+<div class="tab-content" id="tab-model">
+<div class="prose">
+
+<h2>CIDOC-CRM Data Model</h2>
+<p>The knowledge graph uses an event-centric CIDOC-CRM model with CRMgeo extensions. The core structural pattern is:</p>
+
+<pre><code>E7_Activity [assertion of jurisdiction]
+  &rarr; P14_carried_out_by &rarr; E74_Group [sovereign power]
+  &rarr; P7_took_place_at &rarr; E93_Presence [spatial extent]
+  &rarr; P4_has_time-span &rarr; E52_Time-Span [year range]
+  &rarr; asserted_jurisdiction_over &rarr; E53_Place [Indigenous territory]
+
+E5_Event [treaty or act]
+  &rarr; P11_had_participant &rarr; E74_Group [parties to the treaty]
+  &rarr; P4_has_time-span &rarr; E52_Time-Span [date]</code></pre>
+
+<h2>Entity Classes</h2>
+<table class="model-table">
+    <thead>
+        <tr><th>Class</th><th>Ontology</th><th>Count</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><span class="badge badge-e53">E53 Place</span></td><td>CIDOC-CRM</td><td>526</td><td>Enduring spatial entities: Indigenous territories, modern provinces, countries, landmass</td></tr>
+        <tr><td><span class="badge badge-e93">E93 Presence</span></td><td>CRMgeo</td><td>38</td><td>Time-bound territorial configurations: historical colonies, districts, claimed areas</td></tr>
+        <tr><td><span class="badge badge-e74">E74 Group</span></td><td>CIDOC-CRM</td><td>11</td><td>Sovereign powers: states, empires, commercial entities (HBC)</td></tr>
+        <tr><td><span class="badge badge-e7">E7 Activity</span></td><td>CIDOC-CRM</td><td>65</td><td>Assertions of jurisdiction: the event-centric core linking who, where, when</td></tr>
+        <tr><td><span class="badge badge-e5">E5 Event</span></td><td>CIDOC-CRM</td><td>24</td><td>Treaties, acts of parliament, boundary decisions</td></tr>
+        <tr><td><span class="badge badge-e53">E52 Time-Span</span></td><td>CIDOC-CRM</td><td>126</td><td>Temporal extents with begin/end dates</td></tr>
+        <tr><td><span class="badge badge-e53">E55 Type</span></td><td>CIDOC-CRM</td><td>18</td><td>Classification vocabulary (typed as SKOS Concepts)</td></tr>
+    </tbody>
+</table>
+
+<h2>Key Modeling Decisions</h2>
+
+<h3>Indigenous territories as E53 Place (not E93)</h3>
+<p>Indigenous territories are modeled as <strong>enduring E53 Places</strong>&mdash;they are not contingent on European recognition and many have never been legally ceded. The choice of E53 over E93 reflects that these are persistent spatial realities, not time-bound configurations. Colonial claims come and go; the land and its Indigenous relationships endure.</p>
+
+<h3>Colonial configurations as E93 Presence</h3>
+<p>Historical territorial claims (New France, Rupert's Land, Upper Canada, etc.) are <strong>E93 Presences</strong>&mdash;time-bound spatial configurations that came into being through European treaties and legislation, and ended through the same mechanisms. The same physical land accumulates multiple E93 Presences over time.</p>
+
+<h3>Event-centric assertions, not direct sovereignty</h3>
+<p>Rather than directly linking a sovereign to a territory, we route through <strong>E7 Activity</strong> nodes that represent the <em>act of asserting jurisdiction</em>. This makes explicit:</p>
+<ul>
+    <li><strong>Who</strong> asserted (<code>P14_carried_out_by</code> &rarr; E74 Group)</li>
+    <li><strong>Where</strong> they asserted (<code>P7_took_place_at</code> &rarr; E93 Presence)</li>
+    <li><strong>When</strong> (<code>P4_has_time-span</code> &rarr; E52 Time-Span)</li>
+    <li><strong>Over which Indigenous territories</strong> (<code>asserted_jurisdiction_over</code> &rarr; E53 Place)</li>
+    <li><strong>What kind of assertion</strong> (<code>P2_has_type</code> &rarr; E55 Type)</li>
+</ul>
+
+<h3>Vocabulary: assertions, not sovereignty</h3>
+<p>The type vocabulary avoids language that presumes colonial legitimacy:</p>
+<table class="model-table">
+    <thead>
+        <tr><th>Type</th><th>Used For</th><th>Note</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Inter-European Treaty Assertion</td><td>France, Britain, Spain, Russia, Denmark</td><td>Indigenous nations were not party to these agreements</td></tr>
+        <tr><td>Commercial Monopoly Grant</td><td>Hudson's Bay Company</td><td>Control was primarily economic, not administrative in many regions</td></tr>
+        <tr><td>Legislative Assertion</td><td>USA, unilateral acts</td><td>Jurisdiction asserted through legislation by settler governments</td></tr>
+        <tr><td>Administrative Jurisdiction</td><td>Canadian provinces/territories</td><td>Ongoing governance within Confederation</td></tr>
+        <tr><td>Disputed Assertion</td><td>Overlapping European claims</td><td>Contested between settler powers</td></tr>
+        <tr><td>Formal Recognition of Indigenous Sovereignty</td><td>Indian Territory (1763&ndash;1774)</td><td>The Royal Proclamation acknowledged pre-existing rights. In practice, there were considerable breaches.</td></tr>
+    </tbody>
+</table>
+
+<h3>The Royal Proclamation and Indian Territory</h3>
+<p>The "Indian Territory" (1763&ndash;1774) is not modeled as a colonial assertion but as a <strong>formal recognition of Indigenous sovereignty</strong>. The Royal Proclamation of 1763 was a commitment by the Crown following the Seven Years' War that acknowledged Indigenous land rights west of the Appalachians. It uses the distinct property <code>formally_recognized_sovereignty_of</code> rather than <code>asserted_jurisdiction_over</code>.</p>
+
+<h3>Custom properties</h3>
+<table class="model-table">
+    <thead>
+        <tr><th>Property</th><th>Domain</th><th>Range</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>asserted_jurisdiction_over</code></td><td>E7 Activity</td><td>E53 Place</td><td>Links a colonial assertion to Indigenous territories it spatially overlaps. Records the colonial power's assertion, not a transfer of sovereignty.</td></tr>
+        <tr><td><code>formally_recognized_sovereignty_of</code></td><td>E7 Activity</td><td>E53 Place</td><td>Links an act of formal recognition to Indigenous territories whose sovereignty was acknowledged. These rights pre-exist the recognition.</td></tr>
+    </tbody>
+</table>
+
+<h3>Identifier scheme</h3>
+<table class="model-table">
+    <thead>
+        <tr><th>Layer</th><th>PID Source</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Indigenous territories</td><td>Native Land Digital slugs</td><td><code>&lt;https://native-land.ca/maps/territories/plains-cree&gt;</code></td></tr>
+        <tr><td>Modern provinces</td><td>Wikidata QIDs</td><td><code>wd:Q1989</code> (Saskatchewan)</td></tr>
+        <tr><td>Historical claims</td><td>Wikidata QIDs / minted</td><td><code>wd:Q738395</code> (Rupert's Land)</td></tr>
+        <tr><td>Sovereign powers</td><td>Wikidata QIDs</td><td><code>wd:Q76039</code> (HBC)</td></tr>
+        <tr><td>Treaties &amp; acts</td><td>Wikidata QIDs / minted</td><td><code>wd:Q156211</code> (Treaty of Paris 1763)</td></tr>
+    </tbody>
+</table>
+
+<h2>Data Sources &amp; Attribution</h2>
+<div class="attribution-box">
+    <h4>Territorial Evolution Shapefiles</h4>
+    <p>Nicholson, Norman L.; Whebell, Charles F. J.; Galois, Robert; Stavely, Michael, 2020, "Territorial Evolution, 1670&ndash;2001", <a href="https://doi.org/10.5683/SP2/IQ7E0X">https://doi.org/10.5683/SP2/IQ7E0X</a>, Borealis, V1. CC BY-NC 4.0.</p>
+</div>
+<div class="attribution-box">
+    <h4>Native Land Digital</h4>
+    <p>Indigenous territory data referenced by URI from <a href="https://native-land.ca/">Native Land Digital</a>. No NLD boundary data is stored or redistributed. Per the <a href="https://api-docs.native-land.ca/data-sovereignty-treaty">Data Sovereignty Treaty</a>, Indigenous communities are the rightful stewards of their territorial data.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ====== TAB: GRAPH ====== -->
+<div class="tab-content" id="tab-graph">
+<div class="prose">
+<h2>Knowledge Graph Visualization</h2>
+<p>Showing sovereign powers, historical territories, and their relationships. Hover over nodes for details; click Wikidata-grounded nodes to open their persistent identifiers. Drag nodes to rearrange.</p>
+</div>
+<div id="graph-container"></div>
+<div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0; font-size: 0.8rem;">
+    <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#f87171"/></svg> Sovereign Powers (E74)</span>
+    <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#fb923c"/></svg> Historical Territories (E93)</span>
+    <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#34d399"/></svg> Provinces &amp; Territories (E53)</span>
+    <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#60a5fa"/></svg> Treaties &amp; Acts (E5)</span>
+    <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#a78bfa"/></svg> Other Places (E53)</span>
+</div>
+</div>
+
+<!-- ====== TAB: OVERLAPS ====== -->
+<div class="tab-content" id="tab-overlaps">
+<div class="prose">
+<h2>Territorial Overlaps</h2>
+<p>Each colonial assertion spatially overlapped with specific Indigenous territories. Select a claim below to see which Indigenous E53 Places it <code>asserted_jurisdiction_over</code>. Links go to Native Land Digital.</p>
+</div>
+<select id="overlap-select"><option value="">Select a territorial claim...</option></select>
+<div id="overlap-count" style="font-size: 0.85rem; color: var(--text-dim); margin: 0.5rem 0;"></div>
+<div id="overlap-list"></div>
+</div>
+
+<!-- ====== TAB: ENTITIES ====== -->
+<div class="tab-content" id="tab-entities">
+<div class="prose">
+<h2>Entity Browser</h2>
+<p>All grounded entities in the knowledge graph with their persistent identifiers.</p>
+</div>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="sovereign">Sovereigns</button>
+    <button class="filter-btn" data-filter="province">Provinces</button>
+    <button class="filter-btn" data-filter="territory">Territories</button>
+    <button class="filter-btn" data-filter="historical">Historical</button>
+    <button class="filter-btn" data-filter="district">Districts</button>
+    <button class="filter-btn" data-filter="event">Events</button>
+    <button class="filter-btn" data-filter="place">Places</button>
+</div>
+<div class="entity-list" id="entity-list"></div>
+</div>
+
+<!-- ====== TAB: MAP ====== -->
+<div class="tab-content" id="tab-map">
+<div class="prose">
+<h2>Interactive Map</h2>
+<p>The original animated map visualization showing Canada's evolving boundaries from 1667 to 2001.</p>
+</div>
+<div style="margin: 1rem 0;">
+    <a href="map.html" style="display: inline-block; background: var(--accent-dim); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; text-decoration: none;">Open Full-Screen Map &rarr;</a>
+</div>
+<iframe src="map.html" style="width: 100%; height: 600px; border: 1px solid var(--border); border-radius: 10px;" loading="lazy"></iframe>
+</div>
+
+</main>
+
+<footer>
+    <p>Built with CIDOC-CRM, Wikidata, Native Land Digital, and D3.js. Source data: <a href="https://doi.org/10.5683/SP2/IQ7E0X">Nicholson et al., 2020</a>. CC BY-NC 4.0.</p>
+</footer>
+
+<style>
+    .filter-btn {
+        background: var(--bg-card);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .filter-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+    .filter-btn.active { color: var(--accent); border-color: var(--accent-dim); background: rgba(96,165,250,0.08); }
+</style>
+
+<script>
+// ============================
+// Data loading and tab management
+// ============================
+let graphData = null;
+
+async function loadData() {
+    const resp = await fetch('data/graph_data.json');
+    graphData = await resp.json();
+    initStats();
+    initEntityBrowser();
+    initOverlaps();
+}
+
+// Tabs
+document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'graph' && !graphInitialized) initGraph();
+    });
+});
+
+// Stats
+function initStats() {
+    const s = graphData.stats;
+    const grid = document.getElementById('stats-grid');
+    const items = [
+        [s.total_triples.toLocaleString(), 'RDF Triples'],
+        [s.e53_places, 'E53 Places'],
+        [s.indigenous_territories, 'Indigenous Territories'],
+        [s.e93_presences, 'E93 Presences'],
+        [s.e7_activities, 'E7 Activities'],
+        [s.e5_events, 'E5 Events'],
+        [s.overlap_connections.toLocaleString(), 'Overlap Connections'],
+    ];
+    grid.innerHTML = items.map(([n, l]) =>
+        `<div class="stat-card"><div class="number">${n}</div><div class="label">${l}</div></div>`
+    ).join('');
+}
+
+// Entity browser
+function initEntityBrowser() {
+    const list = document.getElementById('entity-list');
+    renderEntities('all');
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderEntities(btn.dataset.filter);
         });
+    });
+}
 
-        // Dark basemap
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-            maxZoom: 10,
-        }).addTo(map);
+function renderEntities(filter) {
+    const list = document.getElementById('entity-list');
+    let items = graphData.entities;
+    if (filter !== 'all') items = items.filter(e => e.type === filter);
 
-        // Labels on top
-        const labelsPane = map.createPane('labels');
-        labelsPane.style.zIndex = 650;
-        labelsPane.style.pointerEvents = 'none';
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-            maxZoom: 10,
-            pane: 'labels',
-        }).addTo(map);
+    list.innerHTML = items.map(e => {
+        const badge = e.role.includes('E53') ? 'badge-e53' :
+                      e.role.includes('E93') ? 'badge-e93' :
+                      e.role.includes('E74') ? 'badge-e74' :
+                      e.role.includes('E7')  ? 'badge-e7'  :
+                      e.role.includes('E5')  ? 'badge-e5'  : 'badge-e53';
+        const link = e.wikidata_url
+            ? `<a href="${e.wikidata_url}" target="_blank">${e.qid}</a>`
+            : `<span style="color:var(--text-dim)">${e.qid}</span>`;
+        return `<div class="entity-item">
+            <span><span class="badge ${badge}">${e.role.split('+')[0].trim()}</span> ${e.name}</span>
+            <span>${link}</span>
+        </div>`;
+    }).join('');
+}
 
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        L.control.attribution({ position: 'bottomleft' })
-            .addAttribution('Data: <a href="https://historicalatlas.ca/" target="_blank">Historical Atlas of Canada</a>')
-            .addTo(map);
+// Overlaps
+function initOverlaps() {
+    const select = document.getElementById('overlap-select');
+    const keys = Object.keys(graphData.overlap_stats).sort();
+    keys.forEach(key => {
+        const [name, sovereign] = key.split('|');
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `${name} (${sovereign})`;
+        select.appendChild(opt);
+    });
 
-        // --- State ---
-        let allFeatures = {};   // year -> GeoJSON features
-        let changeEvents = {};  // year -> [{event, description}]
-        let years = [];
-        let currentIdx = 0;
-        let playing = false;
-        let playInterval = null;
-        let speed = 1;
-        const speeds = [0.5, 1, 2, 4];
-        let speedIdx = 1;
+    select.addEventListener('change', () => {
+        const key = select.value;
+        const listEl = document.getElementById('overlap-list');
+        const countEl = document.getElementById('overlap-count');
+        if (!key) { listEl.innerHTML = ''; countEl.textContent = ''; return; }
 
-        let boundaryLayer = null;
+        const overlaps = graphData.overlap_stats[key];
+        countEl.textContent = `${overlaps.length} Indigenous territories`;
+        listEl.innerHTML = overlaps.map(ov =>
+            `<div class="overlap-item"><a href="https://native-land.ca/maps/territories/${ov.slug}" target="_blank">${ov.territory}</a></div>`
+        ).join('');
+    });
+}
 
-        // --- Load data ---
-        async function loadData() {
-            // Load TopoJSON
-            const resp = await fetch('data/all_boundaries.topojson');
-            const topo = await resp.json();
+// ============================
+// Force-directed graph
+// ============================
+let graphInitialized = false;
 
-            // Get the object key
-            const objKey = Object.keys(topo.objects)[0];
-            const geojson = topojson.feature(topo, topo.objects[objKey]);
+function initGraph() {
+    graphInitialized = true;
+    const container = document.getElementById('graph-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
 
-            // Group features by year
-            geojson.features.forEach(f => {
-                const y = f.properties.year;
-                if (!allFeatures[y]) allFeatures[y] = [];
-                allFeatures[y].push(f);
-            });
+    const svg = d3.select('#graph-container').append('svg')
+        .attr('viewBox', [0, 0, width, height]);
 
-            years = Object.keys(allFeatures).map(Number).sort((a, b) => a - b);
+    const g = svg.append('g');
 
-            // Load changes
-            try {
-                const cr = await fetch('data/changes.topojson');
-                const cTopo = await cr.json();
-                const cKey = Object.keys(cTopo.objects)[0];
-                const cGeo = topojson.feature(cTopo, cTopo.objects[cKey]);
-                cGeo.features.forEach(f => {
-                    const y = f.properties.year;
-                    if (!changeEvents[y]) changeEvents[y] = [];
-                    changeEvents[y].push({
-                        event: f.properties.event,
-                        description: f.properties.description
-                    });
-                });
-            } catch(e) {
-                console.warn('Changes data not available:', e);
-            }
+    // Zoom
+    svg.call(d3.zoom()
+        .scaleExtent([0.3, 4])
+        .on('zoom', (event) => g.attr('transform', event.transform)));
 
-            // Setup timeline
-            const slider = document.getElementById('timeline');
-            slider.max = years.length - 1;
+    const colorMap = {
+        sovereign: '#f87171',
+        historical: '#fb923c',
+        district: '#fb923c',
+        province: '#34d399',
+        territory: '#34d399',
+        event: '#60a5fa',
+        place: '#a78bfa',
+    };
 
-            // Tick labels
-            const tickContainer = document.getElementById('tick-labels');
-            const labelYears = [1667, 1763, 1867, 1905, 1999];
-            // Create sparse ticks
-            tickContainer.innerHTML = '';
-            for (const y of labelYears) {
-                const span = document.createElement('span');
-                span.textContent = y;
-                tickContainer.appendChild(span);
-            }
+    const sizeMap = {
+        sovereign: 12,
+        historical: 8,
+        district: 6,
+        province: 9,
+        territory: 9,
+        event: 7,
+        place: 7,
+    };
 
-            document.getElementById('loading').style.display = 'none';
-            showYear(0);
-            buildLegend();
-        }
+    const nodes = graphData.nodes.map(d => ({...d}));
+    const links = graphData.links.map(d => ({...d}));
 
-        function showYear(idx) {
-            currentIdx = idx;
-            const year = years[idx];
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(80))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => sizeMap[d.group] + 4));
 
-            document.getElementById('year-display').textContent = year;
-            document.getElementById('timeline').value = idx;
+    const link = g.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('stroke', 'rgba(255,255,255,0.1)')
+        .attr('stroke-width', 1);
 
-            // Update map
-            if (boundaryLayer) map.removeLayer(boundaryLayer);
+    const node = g.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', d => sizeMap[d.group] || 6)
+        .attr('fill', d => colorMap[d.group] || '#888')
+        .attr('stroke', 'rgba(0,0,0,0.3)')
+        .attr('stroke-width', 1)
+        .style('cursor', d => d.url ? 'pointer' : 'default')
+        .call(d3.drag()
+            .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+            .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+            .on('end', (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+        );
 
-            const fc = { type: 'FeatureCollection', features: allFeatures[year] || [] };
-            boundaryLayer = L.geoJSON(fc, {
-                style: regionStyle,
-                onEachFeature: (feature, layer) => {
-                    const p = feature.properties;
-                    let tip = `<strong>${p.name || 'Unknown'}</strong>`;
-                    if (p.name_fr) tip += `<br><em>${p.name_fr}</em>`;
-                    if (p.sovereign) tip += `<br>Sovereign: ${p.sovereign}`;
-                    layer.bindTooltip(tip, { sticky: true });
-                }
-            }).addTo(map);
+    node.on('click', (event, d) => {
+        if (d.url) window.open(d.url, '_blank');
+    });
 
-            // Show event banner
-            const banner = document.getElementById('event-banner');
-            if (changeEvents[year]) {
-                const events = changeEvents[year];
-                // Deduplicate event names
-                const uniqueEvents = [...new Set(events.map(e => e.event))];
-                document.getElementById('event-title').textContent = `${year}: ${uniqueEvents.join(' / ')}`;
-                // Show first description
-                const desc = events.find(e => e.description)?.description || '';
-                document.getElementById('event-desc').textContent = desc.length > 300 ? desc.slice(0, 297) + '...' : desc;
-                banner.classList.add('visible');
-            } else {
-                banner.classList.remove('visible');
-            }
+    const tooltip = document.getElementById('tooltip');
+    node.on('mouseover', (event, d) => {
+        const badge = d.group === 'sovereign' ? 'E74 Group' :
+                      d.group === 'historical' || d.group === 'district' ? 'E93 Presence' :
+                      d.group === 'event' ? 'E5 Event' : 'E53 Place';
+        tooltip.innerHTML = `<div class="tt-name">${d.name}</div>
+            <div class="tt-type">${badge}${d.year ? ' &middot; ' + d.year : ''}</div>
+            ${d.url ? '<div class="tt-link"><a href="' + d.url + '" target="_blank">' + d.url + '</a></div>' : ''}`;
+        tooltip.style.display = 'block';
+    })
+    .on('mousemove', (event) => {
+        tooltip.style.left = (event.clientX + 12) + 'px';
+        tooltip.style.top = (event.clientY - 10) + 'px';
+    })
+    .on('mouseout', () => { tooltip.style.display = 'none'; });
 
-            // Update legend visibility based on active sovereigns
-            updateLegend(year);
-        }
+    const labels = g.append('g')
+        .selectAll('text')
+        .data(nodes.filter(d => ['sovereign', 'province', 'territory'].includes(d.group)))
+        .join('text')
+        .attr('class', 'node-label')
+        .attr('dx', d => sizeMap[d.group] + 3)
+        .attr('dy', '0.35em')
+        .text(d => d.name);
 
-        function buildLegend() {
-            const container = document.getElementById('legend');
-            let html = '<h4>Sovereign Powers</h4>';
-            for (const [name, color] of Object.entries(SOVEREIGN_COLORS)) {
-                html += `<div class="legend-item" data-sovereign="${name}">
-                    <div class="legend-swatch" style="background:${color}"></div>
-                    <span>${name === 'Hudsons Bay Company' ? "Hudson's Bay Co." : name}</span>
-                </div>`;
-            }
-            container.innerHTML = html;
-        }
+    simulation.on('tick', () => {
+        link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        node.attr('cx', d => d.x).attr('cy', d => d.y);
+        labels.attr('x', d => d.x).attr('y', d => d.y);
+    });
+}
 
-        function updateLegend(year) {
-            const features = allFeatures[year] || [];
-            const activeSovereigns = new Set(features.map(f => f.properties.sovereign).filter(Boolean));
-            document.querySelectorAll('.legend-item').forEach(el => {
-                const sov = el.dataset.sovereign;
-                el.style.opacity = activeSovereigns.has(sov) ? '1' : '0.25';
-            });
-        }
+// Init
+loadData();
+</script>
 
-        // --- Controls ---
-        document.getElementById('timeline').addEventListener('input', e => {
-            showYear(parseInt(e.target.value));
-        });
-
-        document.getElementById('btn-play').addEventListener('click', () => {
-            playing = !playing;
-            document.getElementById('btn-play').innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
-            document.getElementById('btn-play').classList.toggle('active', playing);
-            if (playing) {
-                playInterval = setInterval(() => {
-                    if (currentIdx >= years.length - 1) {
-                        currentIdx = -1; // will wrap to 0
-                    }
-                    showYear(currentIdx + 1);
-                }, 2000 / speed);
-            } else {
-                clearInterval(playInterval);
-            }
-        });
-
-        document.getElementById('btn-prev').addEventListener('click', () => {
-            if (currentIdx > 0) showYear(currentIdx - 1);
-        });
-
-        document.getElementById('btn-next').addEventListener('click', () => {
-            if (currentIdx < years.length - 1) showYear(currentIdx + 1);
-        });
-
-        document.getElementById('btn-speed').addEventListener('click', () => {
-            speedIdx = (speedIdx + 1) % speeds.length;
-            speed = speeds[speedIdx];
-            document.getElementById('btn-speed').textContent = speed + 'x';
-            if (playing) {
-                clearInterval(playInterval);
-                playInterval = setInterval(() => {
-                    if (currentIdx >= years.length - 1) currentIdx = -1;
-                    showYear(currentIdx + 1);
-                }, 2000 / speed);
-            }
-        });
-
-        // Keyboard controls
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft' && currentIdx > 0) showYear(currentIdx - 1);
-            if (e.key === 'ArrowRight' && currentIdx < years.length - 1) showYear(currentIdx + 1);
-            if (e.key === ' ') {
-                e.preventDefault();
-                document.getElementById('btn-play').click();
-            }
-        });
-
-        // --- Init ---
-        loadData();
-    </script>
 </body>
 </html>
